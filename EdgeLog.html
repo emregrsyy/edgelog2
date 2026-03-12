@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>EdgeLog</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --accent: #c8f04a;
+    --accent2: #a8d03a;
+    --bg: #070707;
+    --surface: #0e0e0e;
+    --surface2: #141414;
+    --border: #1c1c1c;
+    --text: #e8e8e8;
+    --muted: #444;
+    --green: #4caf50;
+    --red: #f44336;
+    --yellow: #ffc107;
+    --blue: #42a5f5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: var(--bg); color: var(--text); font-family: 'Space Mono', monospace; min-height: 100vh; overflow-x: hidden; }
+  
+  /* HEADER */
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 20px 0; position: sticky; top: 0; z-index: 100; }
+  .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .logo { display: flex; align-items: baseline; gap: 6px; }
+  .logo-edge { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--accent); letter-spacing: 1px; }
+  .logo-log { font-family: 'Bebas Neue', sans-serif; font-size: 28px; letter-spacing: 1px; }
+  .logo-beta { background: var(--accent); color: #000; font-size: 8px; font-weight: 900; padding: 2px 5px; border-radius: 3px; letter-spacing: 2px; margin-left: 4px; align-self: center; }
+  .header-pnl { text-align: right; }
+  .header-pnl-label { font-size: 9px; color: var(--muted); letter-spacing: 2px; }
+  .header-pnl-val { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1px; }
+
+  /* ALERT */
+  .alert-bar { background: #1a1400; border: 1px solid #3a3000; border-radius: 8px; padding: 10px 14px; margin: 12px 16px 0; display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--yellow); display: none; }
+
+  /* NAV */
+  .nav { display: flex; overflow-x: auto; scrollbar-width: none; gap: 0; }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-btn { background: none; border: none; color: var(--muted); padding: 10px 16px; cursor: pointer; font-size: 11px; font-family: 'Space Mono', monospace; letter-spacing: 1px; border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.2s; }
+  .nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* CONTENT */
+  .content { padding: 16px; padding-bottom: 80px; }
+
+  /* STAT CARDS */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .stat-label { font-size: 9px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+  .stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 1px; }
+  .stat-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* SECTION */
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .section-title { font-size: 9px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+
+  /* TRADE ROW */
+  .trade-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .trade-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .trade-symbol { font-weight: 700; font-size: 15px; }
+  .trade-meta { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .trade-pnl { font-family: 'Bebas Neue', sans-serif; font-size: 20px; }
+
+  /* BADGE */
+  .badge { display: inline-block; border-radius: 5px; padding: 2px 8px; font-size: 10px; font-weight: 700; letter-spacing: 1px; border: 1px solid; }
+  .badge-green { background: #0d2b0d; color: var(--green); border-color: #1a4a1a; }
+  .badge-red { background: #2b0d0d; color: var(--red); border-color: #4a1a1a; }
+  .badge-yellow { background: #2b2200; color: var(--yellow); border-color: #4a3800; }
+  .badge-blue { background: #0d1a2b; color: var(--blue); border-color: #1a3050; }
+  .badge-gray { background: #1a1a1a; color: #666; border-color: #2a2a2a; }
+
+  /* BUTTON */
+  .btn-primary { background: var(--accent); color: #000; border: none; border-radius: 8px; padding: 12px 20px; font-weight: 800; font-family: 'Space Mono', monospace; font-size: 12px; letter-spacing: 1px; cursor: pointer; width: 100%; transition: opacity 0.2s; }
+  .btn-primary:active { opacity: 0.8; }
+  .btn-secondary { background: var(--surface2); color: #777; border: 1px solid var(--border); border-radius: 8px; padding: 12px 20px; font-family: 'Space Mono', monospace; font-size: 12px; cursor: pointer; width: 100%; }
+  .btn-small { background: var(--accent); color: #000; border: none; border-radius: 7px; padding: 9px 16px; font-weight: 800; font-family: 'Space Mono', monospace; font-size: 11px; cursor: pointer; letter-spacing: 1px; }
+  .btn-del { background: none; border: 1px solid #222; color: #555; border-radius: 6px; width: 28px; height: 28px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  /* FORM */
+  .form-panel { background: #080808; border: 1px solid #c8f04a22; border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-full { grid-column: 1/-1; }
+  .form-label { font-size: 9px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; display: block; margin-bottom: 6px; }
+  .form-input { background: #111; border: 1px solid var(--border); border-radius: 7px; color: #fff; padding: 10px 12px; font-size: 14px; width: 100%; outline: none; font-family: 'Space Mono', monospace; -webkit-appearance: none; }
+  .form-input:focus { border-color: #333; }
+  select.form-input { appearance: none; -webkit-appearance: none; }
+  textarea.form-input { height: 60px; resize: vertical; }
+  .form-check { display: flex; align-items: center; gap: 10px; padding: 10px 0; }
+  .form-check input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--red); }
+  .form-check label { font-size: 12px; color: var(--red); cursor: pointer; }
+  .form-btns { display: flex; gap: 10px; margin-top: 14px; }
+
+  /* PROGRESS BAR */
+  .prog-wrap { height: 5px; background: #1a1a1a; border-radius: 3px; overflow: hidden; }
+  .prog-bar { height: 100%; border-radius: 3px; transition: width 0.5s; }
+
+  /* WATCHLIST */
+  .watch-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 10px; transition: border-color 0.3s; }
+  .watch-card.in-zone { border-color: #ffc10740; }
+  .watch-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .watch-symbol { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1px; }
+  .watch-note { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+  .watch-price { font-family: 'Bebas Neue', sans-serif; font-size: 20px; text-align: right; }
+  .zone-track { position: relative; margin: 12px 0; }
+  .zone-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-bottom: 5px; font-family: monospace; }
+  .zone-bar { height: 6px; background: #152b15; border-radius: 3px; position: relative; }
+  .zone-dot { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 14px; height: 14px; border-radius: 50%; border: 2px solid #000; transition: left 0.3s; }
+  .price-update { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+  .price-update input { flex: 1; background: #111; border: 1px solid var(--border); border-radius: 7px; color: #fff; padding: 8px 12px; font-size: 14px; font-family: monospace; outline: none; }
+
+  /* JOURNAL CARD */
+  .journal-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 10px; }
+  .journal-card.rule-break { border-color: #f4433620; }
+  .journal-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .journal-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+  .journal-notes { font-size: 11px; color: var(--muted); font-style: italic; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 6px; line-height: 1.4; }
+
+  /* REVIEW */
+  .checklist-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .checklist-item:last-child { border-bottom: none; }
+  .checklist-item input { width: 18px; height: 18px; accent-color: var(--accent); flex-shrink: 0; }
+  .checklist-item label { font-size: 13px; color: #ccc; cursor: pointer; line-height: 1.4; }
+
+  /* STATS BAR */
+  .stat-bar-row { margin-bottom: 14px; }
+  .stat-bar-top { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px; }
+  .stat-bar-name { font-weight: 700; }
+  .stat-bar-meta { color: var(--muted); font-family: monospace; font-size: 11px; }
+
+  /* BOTTOM FAB */
+  .fab { position: fixed; bottom: 20px; right: 20px; width: 52px; height: 52px; background: var(--accent); border: none; border-radius: 50%; font-size: 24px; color: #000; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 4px 20px #c8f04a40; z-index: 200; transition: transform 0.2s; }
+  .fab:active { transform: scale(0.92); }
+
+  /* TARGET BAR */
+  .target-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .target-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); font-family: monospace; margin-bottom: 8px; }
+  .target-bar { height: 12px; background: #1a1a1a; border-radius: 6px; overflow: hidden; margin-bottom: 6px; }
+  .target-fill { height: 100%; background: linear-gradient(90deg, #c8f04a55, var(--accent)); border-radius: 6px; transition: width 1s; }
+  .target-pct { font-size: 11px; color: var(--muted); font-family: monospace; }
+
+  /* PAGE visibility */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: var(--border); margin: 8px 0; }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px; line-height: 2; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">
+      <span class="logo-edge">EDGE</span>
+      <span class="logo-log">LOG</span>
+      <span class="logo-beta">BETA</span>
+    </div>
+    <div class="header-pnl">
+      <div class="header-pnl-label">TOPLAM P&L</div>
+      <div class="header-pnl-val" id="headerPnl">+0 ₺</div>
+    </div>
+  </div>
+  <div class="alert-bar" id="alertBar">
+    <span>⚡</span><span id="alertText"></span>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showTab('dashboard')">Dashboard</button>
+    <button class="nav-btn" onclick="showTab('journal')">Journal</button>
+    <button class="nav-btn" onclick="showTab('watchlist')">Watchlist</button>
+    <button class="nav-btn" onclick="showTab('review')">Review</button>
+    <button class="nav-btn" onclick="showTab('stats')">İstatistik</button>
+  </nav>
+</div>
+
+<!-- DASHBOARD -->
+<div class="page active content" id="page-dashboard">
+  <div class="stat-grid" id="dashStats"></div>
+  <div class="section">
+    <div class="section-title">Psikoloji Performansı</div>
+    <div id="dashPsych"></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Son İşlemler</div>
+    <div id="dashTrades"></div>
+  </div>
+  <div class="section">
+    <div class="section-title">⚡ İzleme Listesi</div>
+    <div id="dashWatch"></div>
+  </div>
+</div>
+
+<!-- JOURNAL -->
+<div class="page content" id="page-journal">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div style="font-size:9px;color:var(--muted);letter-spacing:2px;" id="journalCount">0 KAYIT</div>
+    <button class="btn-small" onclick="toggleForm()">+ YENİ İŞLEM</button>
+  </div>
+
+  <div class="form-panel" id="tradeForm" style="display:none;">
+    <div style="font-size:10px;color:var(--accent);letter-spacing:2px;margin-bottom:14px;">YENİ İŞLEM KAYDI</div>
+    <div class="form-grid">
+      <div><label class="form-label">Sembol</label><input class="form-input" id="f-symbol" placeholder="THYAO" /></div>
+      <div><label class="form-label">Tarih</label><input class="form-input" type="date" id="f-date" /></div>
+      <div><label class="form-label">Yön</label><select class="form-input" id="f-dir"><option>Long</option><option>Short</option></select></div>
+      <div><label class="form-label">Setup</label><select class="form-input" id="f-setup"><option>OB</option><option>Demand Zone</option><option>Supply Zone</option><option>BOS+OB</option><option>CHoCH</option><option>FVG</option><option>Trend Takibi</option><option>Diğer</option></select></div>
+      <div><label class="form-label">Giriş Fiyatı</label><input class="form-input" type="number" id="f-entry" placeholder="0" /></div>
+      <div><label class="form-label">Stop Loss</label><input class="form-input" type="number" id="f-stop" placeholder="0" /></div>
+      <div><label class="form-label">Take Profit</label><input class="form-input" type="number" id="f-tp" placeholder="0" /></div>
+      <div><label class="form-label">P&L (₺)</label><input class="form-input" type="number" id="f-pnl" placeholder="0" /></div>
+      <div><label class="form-label">R:R</label><input class="form-input" type="number" id="f-rr" step="0.1" placeholder="2.0" /></div>
+      <div><label class="form-label">Confluences</label><input class="form-input" type="number" id="f-conf" min="1" max="6" placeholder="2" /></div>
+      <div><label class="form-label">Psikoloji</label><select class="form-input" id="f-psych"><option>Sakin</option><option>Aceleci</option><option>Korkmuş</option><option>Aşırı Güvenli</option><option>Kararsız</option></select></div>
+      <div><label class="form-label">Durum</label><select class="form-input" id="f-status"><option>Closed</option><option>Open</option><option>BE</option></select></div>
+      <div class="form-full"><label class="form-label">Notlar</label><textarea class="form-input" id="f-notes" placeholder="Setup hakkında düşünceler..."></textarea></div>
+      <div class="form-full form-check">
+        <input type="checkbox" id="f-rule"><label for="f-rule">⚠️ Kural ihlali var</label>
+      </div>
+    </div>
+    <div class="form-btns">
+      <button class="btn-primary" onclick="saveTrade()" style="flex:1;">KAYDET</button>
+      <button class="btn-secondary" onclick="toggleForm()" style="flex:0.5;">İPTAL</button>
+    </div>
+  </div>
+
+  <div id="journalList"></div>
+</div>
+
+<!-- WATCHLIST -->
+<div class="page content" id="page-watchlist">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div style="font-size:9px;color:var(--muted);letter-spacing:2px;" id="watchCount">0 SEMBOL</div>
+    <button class="btn-small" onclick="toggleWatchForm()">+ EKLE</button>
+  </div>
+
+  <div class="form-panel" id="watchForm" style="display:none;">
+    <div class="form-grid">
+      <div><label class="form-label">Sembol</label><input class="form-input" id="w-symbol" placeholder="CWENE" /></div>
+      <div><label class="form-label">Güncel Fiyat</label><input class="form-input" type="number" id="w-price" placeholder="0" /></div>
+      <div><label class="form-label">Zone Alt</label><input class="form-input" type="number" id="w-min" placeholder="0" /></div>
+      <div><label class="form-label">Zone Üst</label><input class="form-input" type="number" id="w-max" placeholder="0" /></div>
+      <div class="form-full"><label class="form-label">Not</label><textarea class="form-input" id="w-note" placeholder="Beklenti ve plan..." style="height:50px;"></textarea></div>
+    </div>
+    <div class="form-btns">
+      <button class="btn-primary" onclick="saveWatch()" style="flex:1;">EKLE</button>
+      <button class="btn-secondary" onclick="toggleWatchForm()" style="flex:0.5;">İPTAL</button>
+    </div>
+  </div>
+
+  <div id="watchList"></div>
+</div>
+
+<!-- REVIEW -->
+<div class="page content" id="page-review">
+  <div style="font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:14px;">HAFTALIK PAZAR RUTINI</div>
+  <div class="stat-grid" id="reviewStats"></div>
+  <div class="section" id="reviewBest"></div>
+  <div class="section" id="reviewWorst"></div>
+  <div class="section">
+    <div class="section-title">Kontrol Listesi</div>
+    <div id="checklist"></div>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="page content" id="page-stats">
+  <div style="font-size:9px;color:var(--muted);letter-spacing:2px;margin-bottom:14px;">PERFORMANS ANALİZİ</div>
+  <div class="stat-grid" id="statsCards"></div>
+  <div class="section">
+    <div class="section-title">Setup Performansı</div>
+    <div id="setupStats"></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Psikoloji Analizi</div>
+    <div id="psychStats"></div>
+  </div>
+  <div class="target-section">
+    <div class="section-title">Hedef Takibi — 25K₺ → 250K₺</div>
+    <div class="target-labels">
+      <span>Başlangıç: 25.000₺</span>
+      <span id="targetCurrent">-</span>
+      <span>Hedef: 250.000₺</span>
+    </div>
+    <div class="target-bar"><div class="target-fill" id="targetFill" style="width:0%"></div></div>
+    <div class="target-pct" id="targetPct">%0 tamamlandı</div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────
+const DEFAULT_TRADES = [
+  {id:1,symbol:"AKGRT",direction:"Long",date:"2026-01-02",entry:6.8,stop:6.56,tp:7.35,pnl:107,rr:2.21,status:"Closed",setup:"OB",confluences:3,psychology:"Sakin",ruleBreak:false,notes:"Temiz OB girişi"},
+  {id:2,symbol:"YKBNK",direction:"Long",date:"2025-12-31",entry:35.72,stop:34.58,tp:38.76,pnl:100,rr:2.83,status:"Closed",setup:"Demand Zone",confluences:2,psychology:"Sakin",ruleBreak:false,notes:""},
+  {id:3,symbol:"THYAO",direction:"Long",date:"2026-01-15",entry:283.5,stop:276,tp:314.75,pnl:312,rr:4.64,status:"Closed",setup:"BOS+OB",confluences:4,psychology:"Sakin",ruleBreak:false,notes:"Mükemmel trend takibi"},
+  {id:4,symbol:"YKBNK",direction:"Long",date:"2026-01-28",entry:37.36,stop:35.88,tp:40.4,pnl:322,rr:2.0,status:"Closed",setup:"OB",confluences:3,psychology:"Sakin",ruleBreak:false,notes:""},
+  {id:5,symbol:"BTC",direction:"Long",date:"2026-02-02",entry:77500,stop:74021,tp:94365,pnl:-210,rr:3.28,status:"Closed",setup:"Demand Zone",confluences:2,psychology:"Aceleci",ruleBreak:true,notes:"Farklı piyasa, aceleci davrandım"},
+];
+const DEFAULT_WATCH = [
+  {id:1,symbol:"CWENE",note:"Demand Zone 24-26 bandı, CHoCH oluştu, zone tutarsa long",zoneMin:24,zoneMax:26,currentPrice:28.24},
+  {id:2,symbol:"THYAO",note:"Trend devam ederse yeni OB oluşumunu bekle",zoneMin:270,zoneMax:280,currentPrice:295},
+];
+const CHECKLIST_ITEMS = [
+  "Tüm işlemleri journal'a ekledim mi?",
+  "Kural ihlali yaptıysam sebebini yazdım mı?",
+  "Kaçırdığım setup'ları inceledim mi?",
+  "Gelecek hafta için watchlist hazırladım mı?",
+  "Bu haftaki psikolojimi değerlendirdim mi?",
+  "Hedefimden ne kadar uzaktayım, gözden geçirdim mi?",
+];
+
+function loadTrades() { try { const d = localStorage.getItem('el_trades'); return d ? JSON.parse(d) : DEFAULT_TRADES; } catch(e) { return DEFAULT_TRADES; } }
+function loadWatch() { try { const d = localStorage.getItem('el_watch'); return d ? JSON.parse(d) : DEFAULT_WATCH; } catch(e) { return DEFAULT_WATCH; } }
+function saveTrades(t) { localStorage.setItem('el_trades', JSON.stringify(t)); }
+function saveWatchData(w) { localStorage.setItem('el_watch', JSON.stringify(w)); }
+
+let trades = loadTrades();
+let watchlist = loadWatch();
+let currentTab = 'dashboard';
+
+// ─── UTILS ───────────────────────────────────────────────
+function fmtPnl(v) {
+  const abs = Math.abs(v);
+  const str = abs >= 1000 ? abs.toLocaleString('tr-TR') : abs.toString();
+  return (v >= 0 ? '+' : '-') + str + ' ₺';
+}
+function pnlColor(v) { return v >= 0 ? 'var(--accent)' : 'var(--red)'; }
+function badge(text, cls) { return `<span class="badge badge-${cls}">${text}</span>`; }
+function setupBadgeColor(s) { return 'blue'; }
+function psychColor(p) { return p === 'Sakin' ? 'green' : p === 'Aceleci' || p === 'Korkmuş' ? 'red' : 'yellow'; }
+
+// ─── STATS ───────────────────────────────────────────────
+function getStats() {
+  const closed = trades.filter(t => t.status === 'Closed');
+  const wins = closed.filter(t => t.pnl > 0);
+  const losses = closed.filter(t => t.pnl < 0);
+  const totalPnl = closed.reduce((s,t) => s+t.pnl, 0);
+  const winRate = closed.length ? Math.round((wins.length/closed.length)*100) : 0;
+  const avgRR = closed.length ? (closed.reduce((s,t) => s+t.rr,0)/closed.length).toFixed(2) : 0;
+  const avgWin = wins.length ? Math.round(wins.reduce((s,t)=>s+t.pnl,0)/wins.length) : 0;
+  const avgLoss = losses.length ? Math.round(losses.reduce((s,t)=>s+t.pnl,0)/losses.length) : 0;
+  const ruleBreaks = trades.filter(t=>t.ruleBreak).length;
+  return {closed,wins,losses,totalPnl,winRate,avgRR,avgWin,avgLoss,ruleBreaks};
+}
+
+// ─── TABS ─────────────────────────────────────────────────
+function showTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-'+tab).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => { if(b.textContent.toLowerCase().includes(tab.substring(0,4))) b.classList.add('active'); });
+  render();
+}
+
+// ─── RENDER ──────────────────────────────────────────────
+function render() {
+  const st = getStats();
+  updateHeader(st);
+  checkAlerts();
+  if(currentTab==='dashboard') renderDashboard(st);
+  if(currentTab==='journal') renderJournal();
+  if(currentTab==='watchlist') renderWatchlist();
+  if(currentTab==='review') renderReview(st);
+  if(currentTab==='stats') renderStats(st);
+}
+
+function updateHeader(st) {
+  const el = document.getElementById('headerPnl');
+  el.textContent = fmtPnl(st.totalPnl);
+  el.style.color = pnlColor(st.totalPnl);
+}
+
+function checkAlerts() {
+  const alerts = watchlist.filter(w => w.currentPrice >= w.zoneMin && w.currentPrice <= w.zoneMax);
+  const bar = document.getElementById('alertBar');
+  if(alerts.length) {
+    bar.style.display = 'flex';
+    document.getElementById('alertText').textContent = alerts.map(w => `${w.symbol} Zone'a girdi! (${w.zoneMin}-${w.zoneMax})`).join(' · ');
+  } else { bar.style.display = 'none'; }
+}
+
+function renderDashboard(st) {
+  // Stat cards
+  document.getElementById('dashStats').innerHTML = [
+    {label:'WIN RATE', val: st.winRate+'%', sub:`${st.wins.length}K / ${st.losses.length}K`, color: st.winRate>=60?'var(--accent)':'var(--red)'},
+    {label:'TOPLAM İŞLEM', val: trades.length, sub:`${st.closed.length} kapalı`, color:'var(--text)'},
+    {label:'AVG R:R', val: st.avgRR, sub:'min 2.0 hedef', color: st.avgRR>=2?'var(--accent)':'var(--yellow)'},
+    {label:'KURAL İHLALİ', val: st.ruleBreaks, sub: st.ruleBreaks===0?'Mükemmel!':'azalt!', color: st.ruleBreaks===0?'var(--accent)':'var(--red)'},
+  ].map(c => `<div class="stat-card"><div class="stat-label">${c.label}</div><div class="stat-val" style="color:${c.color}">${c.val}</div><div class="stat-sub">${c.sub}</div></div>`).join('');
+
+  // Psychology
+  const psychMap = {};
+  ['Sakin','Aceleci','Korkmuş','Aşırı Güvenli','Kararsız'].forEach(p => {
+    const pt = st.closed.filter(t => t.psychology===p);
+    if(pt.length) psychMap[p] = {count:pt.length, wins:pt.filter(t=>t.pnl>0).length};
+  });
+  document.getElementById('dashPsych').innerHTML = Object.entries(psychMap).map(([p,s]) => {
+    const wr = Math.round((s.wins/s.count)*100);
+    return `<div class="trade-row"><span style="font-size:13px">${p}</span><div style="display:flex;align-items:center;gap:8px"><div style="width:60px;height:4px;background:#1a1a1a;border-radius:2px"><div style="width:${wr}%;height:100%;background:${wr>=60?'var(--accent)':'var(--red)'};border-radius:2px"></div></div><span style="font-size:11px;color:var(--muted);font-family:monospace">${wr}%</span></div></div>`;
+  }).join('') || '<div class="empty">Henüz veri yok</div>';
+
+  // Recent trades
+  document.getElementById('dashTrades').innerHTML = trades.slice(0,4).map(t => `
+    <div class="trade-row">
+      <div><div class="trade-symbol">${t.symbol}</div><div class="trade-meta">${t.setup} · ${t.date}</div></div>
+      <div class="trade-pnl" style="color:${pnlColor(t.pnl)}">${fmtPnl(t.pnl)}</div>
+    </div>`).join('') || '<div class="empty">İşlem yok</div>';
+
+  // Watchlist
+  document.getElementById('dashWatch').innerHTML = watchlist.map(w => {
+    const inZone = w.currentPrice>=w.zoneMin && w.currentPrice<=w.zoneMax;
+    return `<div class="trade-row"><div><div class="trade-symbol">${w.symbol}</div><div class="trade-meta">Zone: ${w.zoneMin}–${w.zoneMax}</div></div><div style="display:flex;align-items:center;gap:8px"><span style="font-family:monospace">${w.currentPrice}</span>${inZone?badge('ZONE\'DA','yellow'):badge('BEKLE','gray')}</div></div>`;
+  }).join('') || '<div class="empty">Watchlist boş</div>';
+}
+
+function renderJournal() {
+  document.getElementById('journalCount').textContent = trades.length + ' KAYIT';
+  document.getElementById('journalList').innerHTML = trades.map(t => `
+    <div class="journal-card ${t.ruleBreak?'rule-break':''}">
+      <div class="journal-top">
+        <div>
+          <div style="font-weight:700;font-size:17px">${t.symbol}</div>
+          <div style="font-size:10px;color:var(--muted)">${t.date}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="text-align:right">
+            <div style="font-size:10px;color:var(--muted)">R:R ${t.rr}</div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${pnlColor(t.pnl)}">${fmtPnl(t.pnl)}</div>
+          </div>
+          <button class="btn-del" onclick="deleteTrade(${t.id})">×</button>
+        </div>
+      </div>
+      <div class="journal-badges">
+        ${badge(t.direction, t.direction==='Long'?'green':'red')}
+        ${badge(t.setup,'blue')}
+        ${badge(t.psychology, psychColor(t.psychology))}
+        ${badge(t.confluences+'C','gray')}
+        ${t.ruleBreak?badge('KURAL İHLALİ','red'):''}
+      </div>
+      ${t.notes?`<div class="journal-notes">${t.notes}</div>`:''}
+    </div>`).join('') || '<div class="empty">Henüz işlem kaydı yok.<br>+ YENİ İŞLEM ile başla.</div>';
+}
+
+function renderWatchlist() {
+  document.getElementById('watchCount').textContent = watchlist.length + ' SEMBOL';
+  document.getElementById('watchList').innerHTML = watchlist.map(w => {
+    const inZone = w.currentPrice>=w.zoneMin && w.currentPrice<=w.zoneMax;
+    const range = w.zoneMax - w.zoneMin;
+    const pct = range > 0 ? Math.min(100, Math.max(0, ((w.currentPrice-w.zoneMin)/range)*100)) : 50;
+    const dotColor = inZone ? 'var(--yellow)' : 'var(--accent)';
+    return `
+    <div class="watch-card ${inZone?'in-zone':''}">
+      <div class="watch-header">
+        <div>
+          <div class="watch-symbol">${w.symbol} ${inZone?'<span style="font-size:14px">⚡</span>':''}</div>
+          <div class="watch-note">${w.note||'Not yok'}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div>
+            <div style="font-size:9px;color:var(--muted);text-align:right">GÜNCEL</div>
+            <div class="watch-price">${w.currentPrice}</div>
+          </div>
+          <button class="btn-del" onclick="deleteWatch(${w.id})">×</button>
+        </div>
+      </div>
+      <div class="zone-track">
+        <div class="zone-labels"><span>Alt: ${w.zoneMin}</span><span>${inZone?badge('ZONE\'DA','yellow'):''}</span><span>Üst: ${w.zoneMax}</span></div>
+        <div class="zone-bar"><div class="zone-dot" style="left:${pct}%;background:${dotColor}"></div></div>
+      </div>
+      <div class="price-update">
+        <input type="number" placeholder="Fiyatı güncelle..." onkeydown="if(event.key==='Enter')updatePrice(${w.id},this.value)" />
+        <span style="font-size:10px;color:var(--muted)">↵ güncelle</span>
+      </div>
+    </div>`;
+  }).join('') || '<div class="empty">Watchlist boş.<br>İzlemek istediğin hisseleri ekle.</div>';
+}
+
+function renderReview(st) {
+  document.getElementById('reviewStats').innerHTML = [
+    {label:'TOPLAM P&L', val:fmtPnl(st.totalPnl), color:pnlColor(st.totalPnl)},
+    {label:'KURAL İHLALİ', val:st.ruleBreaks, color:st.ruleBreaks===0?'var(--accent)':'var(--red)'},
+  ].map(c=>`<div class="stat-card"><div class="stat-label">${c.label}</div><div class="stat-val" style="color:${c.color}">${c.val}</div></div>`).join('');
+
+  const best = [...st.closed].sort((a,b)=>b.pnl-a.pnl)[0];
+  const worst = [...st.closed].sort((a,b)=>a.pnl-b.pnl)[0];
+  document.getElementById('reviewBest').innerHTML = best ? `<div class="section-title">🏆 En İyi İşlem</div><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:700;font-size:17px">${best.symbol}</div><div style="font-size:11px;color:var(--muted)">${best.setup} · ${best.psychology}</div></div><div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--accent)">${fmtPnl(best.pnl)}</div></div>` : '<div class="section-title">En İyi İşlem</div><div class="empty">Veri yok</div>';
+  document.getElementById('reviewWorst').innerHTML = worst ? `<div class="section-title">📉 En Kötü İşlem</div><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:700;font-size:17px">${worst.symbol}</div><div style="font-size:11px;color:var(--muted)">${worst.setup} · ${worst.psychology}</div>${worst.ruleBreak?badge('KURAL İHLALİ','red'):''}</div><div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--red)">${fmtPnl(worst.pnl)}</div></div>` : '<div class="section-title">En Kötü İşlem</div><div class="empty">Veri yok</div>';
+
+  document.getElementById('checklist').innerHTML = CHECKLIST_ITEMS.map((item,i) => `
+    <label class="checklist-item">
+      <input type="checkbox" id="chk-${i}">
+      <span>${item}</span>
+    </label>`).join('');
+}
+
+function renderStats(st) {
+  document.getElementById('statsCards').innerHTML = [
+    {label:'WIN RATE', val:st.winRate+'%', color:st.winRate>=60?'var(--accent)':'var(--red)'},
+    {label:'AVG R:R', val:st.avgRR, color:st.avgRR>=2?'var(--accent)':'var(--yellow)'},
+    {label:'AVG KAZANÇ', val:'+'+st.avgWin+'₺', color:'var(--accent)'},
+    {label:'AVG KAYIP', val:st.avgLoss+'₺', color:'var(--red)'},
+  ].map(c=>`<div class="stat-card"><div class="stat-label">${c.label}</div><div class="stat-val" style="color:${c.color};font-size:22px">${c.val}</div></div>`).join('');
+
+  // Setup stats
+  const setupMap = {};
+  ['OB','Demand Zone','Supply Zone','BOS+OB','CHoCH','FVG','Trend Takibi','Diğer'].forEach(s => {
+    const st2 = st.closed.filter(t=>t.setup===s);
+    if(st2.length) setupMap[s] = {count:st2.length, wins:st2.filter(t=>t.pnl>0).length, pnl:st2.reduce((a,b)=>a+b.pnl,0)};
+  });
+  document.getElementById('setupStats').innerHTML = Object.entries(setupMap).map(([s,d]) => {
+    const wr = Math.round((d.wins/d.count)*100);
+    return `<div class="stat-bar-row"><div class="stat-bar-top"><span class="stat-bar-name">${s}</span><span class="stat-bar-meta">${d.count} işlem · ${fmtPnl(d.pnl)} · %${wr} WR</span></div><div class="prog-wrap"><div class="prog-bar" style="width:${wr}%;background:${wr>=60?'var(--accent)':'var(--yellow)'}"></div></div></div>`;
+  }).join('') || '<div class="empty">Henüz yeterli veri yok</div>';
+
+  // Psych stats
+  const psychMap = {};
+  ['Sakin','Aceleci','Korkmuş','Aşırı Güvenli','Kararsız'].forEach(p => {
+    const pt = st.closed.filter(t=>t.psychology===p);
+    if(pt.length) psychMap[p] = {count:pt.length, wins:pt.filter(t=>t.pnl>0).length};
+  });
+  document.getElementById('psychStats').innerHTML = Object.entries(psychMap).map(([p,d]) => {
+    const wr = Math.round((d.wins/d.count)*100);
+    return `<div class="stat-bar-row"><div class="stat-bar-top"><span class="stat-bar-name">${p}</span><span class="stat-bar-meta">${d.count} işlem · %${wr} WR</span></div><div class="prog-wrap"><div class="prog-bar" style="width:${wr}%;background:${wr>=60?'var(--accent)':'var(--red)'}"></div></div></div>`;
+  }).join('') || '<div class="empty">Henüz veri yok</div>';
+
+  // Target
+  const start = 25000;
+  const current = start + st.totalPnl;
+  const target = 250000;
+  const pct = Math.min(100, Math.max(0, ((current-start)/(target-start))*100));
+  document.getElementById('targetCurrent').textContent = 'Güncel: '+current.toLocaleString('tr-TR')+'₺';
+  document.getElementById('targetFill').style.width = Math.max(2,pct)+'%';
+  document.getElementById('targetPct').textContent = '%'+pct.toFixed(1)+' tamamlandı';
+}
+
+// ─── ACTIONS ─────────────────────────────────────────────
+function toggleForm() {
+  const f = document.getElementById('tradeForm');
+  f.style.display = f.style.display==='none'?'block':'none';
+  if(f.style.display==='block') {
+    document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  }
+}
+
+function saveTrade() {
+  const sym = document.getElementById('f-symbol').value.trim().toUpperCase();
+  if(!sym) { alert('Sembol giriniz'); return; }
+  const t = {
+    id: Date.now(),
+    symbol: sym,
+    direction: document.getElementById('f-dir').value,
+    date: document.getElementById('f-date').value,
+    entry: parseFloat(document.getElementById('f-entry').value)||0,
+    stop: parseFloat(document.getElementById('f-stop').value)||0,
+    tp: parseFloat(document.getElementById('f-tp').value)||0,
+    pnl: parseFloat(document.getElementById('f-pnl').value)||0,
+    rr: parseFloat(document.getElementById('f-rr').value)||0,
+    status: document.getElementById('f-status').value,
+    setup: document.getElementById('f-setup').value,
+    confluences: parseInt(document.getElementById('f-conf').value)||2,
+    psychology: document.getElementById('f-psych').value,
+    ruleBreak: document.getElementById('f-rule').checked,
+    notes: document.getElementById('f-notes').value.trim(),
+  };
+  trades.unshift(t);
+  saveTrades(trades);
+  toggleForm();
+  ['f-symbol','f-entry','f-stop','f-tp','f-pnl','f-rr','f-notes'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('f-rule').checked=false;
+  render();
+}
+
+function deleteTrade(id) {
+  if(!confirm('Bu işlemi sil?')) return;
+  trades = trades.filter(t=>t.id!==id);
+  saveTrades(trades);
+  render();
+}
+
+function toggleWatchForm() {
+  const f = document.getElementById('watchForm');
+  f.style.display = f.style.display==='none'?'block':'none';
+}
+
+function saveWatch() {
+  const sym = document.getElementById('w-symbol').value.trim().toUpperCase();
+  if(!sym) { alert('Sembol giriniz'); return; }
+  const w = {
+    id: Date.now(),
+    symbol: sym,
+    note: document.getElementById('w-note').value.trim(),
+    zoneMin: parseFloat(document.getElementById('w-min').value)||0,
+    zoneMax: parseFloat(document.getElementById('w-max').value)||0,
+    currentPrice: parseFloat(document.getElementById('w-price').value)||0,
+  };
+  watchlist.unshift(w);
+  saveWatchData(watchlist);
+  toggleWatchForm();
+  ['w-symbol','w-note','w-min','w-max','w-price'].forEach(id=>document.getElementById(id).value='');
+  render();
+}
+
+function deleteWatch(id) {
+  if(!confirm('Bu sembolü listeden çıkar?')) return;
+  watchlist = watchlist.filter(w=>w.id!==id);
+  saveWatchData(watchlist);
+  render();
+}
+
+function updatePrice(id, val) {
+  const price = parseFloat(val);
+  if(isNaN(price)) return;
+  watchlist = watchlist.map(w => w.id===id ? {...w, currentPrice:price} : w);
+  saveWatchData(watchlist);
+  render();
+}
+
+// ─── INIT ────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
